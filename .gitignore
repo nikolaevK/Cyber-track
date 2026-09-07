@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local spot state (dev fallback)
+.data/
+
+# hotspot tooling: large source renders/cutouts and review output
+tools/hotspots/assets/
+tools/hotspots/out/

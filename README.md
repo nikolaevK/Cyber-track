@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Brand My Garage
 
-## Getting Started
+Advertising panels on three cars, a Tesla Cybertruck (20 spots), a Mercedes-Benz G 550 (18) and a Porsche 911 GT3 (18), sold at fixed prices through Stripe. Each car's panels add up to that car's new price (Tesla configurator $74,990, Mercedes MSRP $153,900, Porsche MSRP $224,750, checked 2026-09-04) and every panel is sold for the life of the car. Cars are tabs at the top of the page and live at `/`, `/g-wagon` and `/gt3`. The Cybertruck nose panel carries our own Peptide Ads decal. Sponsors
+rotate the truck, click a panel, preview their logo mapped in perspective onto the steel, and
+buy it in one checkout. Sold panels show the sponsor's logo on the truck and on a permanent
+sponsor wall.
 
-First, run the development server:
+Built with Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS 4, Motion, Stripe, Turso/SQLite
+Checkout and Turso (SQLite). Renders were generated with Higgsfield (Nano Banana 2) from one hero
+image so every angle is the same truck.
+
+## Run it
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in what you have; everything is optional locally
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. Add `?debug=1` to overlay the hotspot grid when adjusting panel
+geometry in `src/lib/hotspots.ts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without `STRIPE_SECRET_KEY` the checkout runs in **demo mode** (development only): the spot is
+marked sold immediately and you land on the success page. Without `TURSO_DATABASE_URL` spot state
+is kept in `.data/spots.db` (SQLite).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Production setup (Vercel)
 
-## Learn More
+The repo deploys to Vercel from GitHub with no build configuration. Everything below is
+environment and account setup; nothing needs a code change.
 
-To learn more about Next.js, take a look at the following resources:
+1. **Import the repo** at vercel.com/new. Framework is detected as Next.js.
+2. **Database** – in the project's Storage tab add **Turso** from the Marketplace (or run
+   `npx vercel integration add tursocloud/database` after `npx vercel link`). It sets
+   `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. The schema in `db/schema.sql` is applied on
+   first request; `npm run db:migrate` applies it up front and checks the connection. The app
+   refuses to start in production without a database, on purpose: without it every panel would
+   look available. Locally nothing is needed: the same code uses `.data/spots.db`.
+3. **Stripe key** – add `STRIPE_SECRET_KEY` (Production) with the live key.
+4. **Deploy once**, note the `*.vercel.app` URL, then register the webhook:
+   `npm run stripe:webhook -- https://<project>.vercel.app`. It creates the endpoint for
+   `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`
+   and `checkout.session.async_payment_failed`, and prints the signing secret once. Add it as
+   `STRIPE_WEBHOOK_SECRET` (Production) and redeploy. Until then the placeholder value makes
+   the webhook reject everything with 400, which is safe: `/success` confirms payments itself.
+   Locally: `stripe listen --forward-to localhost:3000/api/webhooks/stripe`.
+5. **`NEXT_PUBLIC_SITE_URL`** – optional on Vercel. Redirects use the request host and OpenGraph
+   falls back to `VERCEL_PROJECT_PRODUCTION_URL`. Set it when you move to a custom domain.
+6. **Firewall** – after `npx vercel link`, run `tools/vercel/firewall-rules.sh` to stage
+   rate-limit rules in log mode, review them, then `npx vercel firewall publish --yes`.
+   Tighten to `rate_limit` after a day of real traffic. See `HANDOVER.md` for the threat notes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Vercel's own DDoS mitigation is on for every project and blocked traffic is not billed.
+Security headers (nosniff, frame-ancestors none, referrer policy, permissions policy) are set
+in `next.config.ts`; Vercel adds HSTS.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How a purchase works
 
-## Deploy on Vercel
+1. `POST /api/checkout` validates the form, places an atomic 31-minute **hold** on the spot,
+   and creates a Stripe Checkout Session (30-minute expiry) with the hold id in metadata.
+2. Stripe redirects to `/success?session_id=…`. The page verifies `payment_status === "paid"`
+   and marks the spot **sold**; the webhook does the same, so either path is enough.
+3. Cancelling returns via `/api/checkout/cancel?hold=…`, which releases the hold immediately.
+   Expired sessions are released by the webhook, and expired holds read as available anyway.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Where things live
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Path | What |
+|------|------|
+| `src/lib/cars.ts`, `src/lib/cars/*.ts` | Car registry; per-car catalog (names, copy, prices, sizes, best angle), renders and house sponsors |
+| `src/lib/cars/*.hotspots.ts` | Clickable polygons and logo quads per view (1000 × 558 space), generated by the grid tool |
+| `src/lib/homography.ts` | 4-point perspective transform → CSS `matrix3d` |
+| `src/lib/store.ts` | Spot state store: Turso/libSQL in production, `.data/spots.db` locally |
+| `src/components/Configurator.tsx` | Rotatable truck, hotspots, logo preview, detail card |
+| `src/components/CheckoutDialog.tsx` | Sponsor form → Stripe Checkout |
+| `src/app/api/checkout` | Hold + Checkout Session creation, cancel handler |
+| `src/app/api/webhooks/stripe` | Marks spots sold / releases holds |
+| `public/renders/<car>/` | Seven studio renders per car |
+
+Independent project, not affiliated with Tesla, Mercedes-Benz or Porsche.
