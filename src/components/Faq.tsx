@@ -51,8 +51,13 @@ export function Faq({ car }: { car: Car }) {
           <details key={q} className="group">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-base font-semibold [&::-webkit-details-marker]:hidden">
               {q}
-              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-line text-mute transition group-open:rotate-45 group-open:border-ink group-open:text-ink">
-                +
+              <span
+                aria-hidden
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-line text-mute transition group-open:rotate-45 group-open:border-ink group-open:text-ink"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="block">
+                  <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
               </span>
             </summary>
             <p className="pb-6 pr-12 text-sm leading-relaxed text-mute">{a}</p>

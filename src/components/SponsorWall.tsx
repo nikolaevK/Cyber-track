@@ -47,7 +47,7 @@ export function SponsorWall({ car, states }: { car: Car; states: Record<string, 
                     <img src={s.renders[0].src} alt={s.renders[0].alt} className="aspect-[16/9] w-full object-cover" />
                   )}
                   <div className="flex items-center gap-4 p-4">
-                    <Avatar src={s.logoDataUrl} name={s.sponsorName ?? ""} size={56} />
+                    <Avatar src={s.logoSrc} name={s.sponsorName ?? ""} size={56} />
                     <div className="min-w-0">
                       <div className="truncate font-semibold">{s.sponsorName}</div>
                       <div className="truncate text-xs text-mute">{hostOf(s.sponsorUrl)}</div>

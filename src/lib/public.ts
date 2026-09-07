@@ -8,7 +8,8 @@ export interface PublicSpotState {
   status: SpotStatus;
   sponsorName: string | null;
   sponsorUrl: string | null;
-  logoDataUrl: string | null;
+  /** Image URL for the sponsor logo: a static file for house sponsors, /api/logo/... for uploads. */
+  logoSrc: string | null;
   paidAt: string | null;
   /** White cut-vinyl decal, transparent PNG (house sponsors only). */
   decal?: string;
@@ -27,7 +28,7 @@ export function toPublicStates(car: Car, rows: SpotState[]): Record<string, Publ
         status: "sold",
         sponsorName: house.name,
         sponsorUrl: house.url,
-        logoDataUrl: house.logo,
+        logoSrc: house.logo,
         paidAt: null,
         decal: house.decal,
         renders: house.renders,
@@ -42,7 +43,8 @@ export function toPublicStates(car: Car, rows: SpotState[]): Record<string, Publ
       status,
       sponsorName: visible ? (r?.sponsorName ?? null) : null,
       sponsorUrl: visible ? (r?.sponsorUrl ?? null) : null,
-      logoDataUrl: visible ? (r?.logoDataUrl ?? null) : null,
+      // Uploaded logos are served from the database by /api/logo, versioned so the CDN can cache forever.
+      logoSrc: visible && r?.logoDataUrl ? `/api/logo/${car.slug}/${spot.id}?v=${Date.parse(r.updatedAt)}` : null,
       paidAt: status === "sold" ? (r?.paidAt ?? null) : null,
     };
   }

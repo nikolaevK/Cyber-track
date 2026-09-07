@@ -121,7 +121,7 @@ focused on what a modest, well-formed request stream could do to *this* app.
 | 5 | Webhook. | Already safe: signature verified via `constructEvent` before any work; 503 without secret, 400 on bad signature; `complete` is idempotent. |
 | 6 | `GET /api/checkout/cancel?hold=…` releases holds. | Acceptable: hold ids are UUIDv4, only `pending` rows are touched, redirect is same-origin only. |
 | 7 | Image optimizer (`/_next/image`). | Bounded: local images only, default size/quality allow-lists. |
-| 8 | Sponsor logos are stored as data URLs (≤1.5 MB) and inlined into every page render once sold. | **Open, performance not security.** With many sold panels pages get very heavy. Move logos to Vercel Blob (or a cached `/api/logo/...` route) before many sales. |
+| 8 | Sponsor logos were inlined into every page render as data URLs once sold. | Fixed 2026-09-07: logos stay in Turso and are served by `/api/logo/<car>/<spot>?v=<updated_at>` with immutable CDN caching; pages only carry the URL. |
 | 9 | Production without `TURSO_DATABASE_URL` would show all panels available and 500 at checkout. | Fixed: the store throws at startup in production. |
 | 10 | Response headers. | Fixed: nosniff, `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'`, referrer and permissions policies in `next.config.ts`. Full CSP deferred (needs nonces for Next/Motion inline code). |
 - **Stripe catalog exists in LIVE mode only** (created 2026-09-04 via the Stripe MCP connector on the

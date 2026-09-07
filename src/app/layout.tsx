@@ -35,6 +35,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      // Lets Next.js suspend the CSS smooth scrolling while it scrolls a new route to the top.
+      // Without this the scroll-to-top animates and can be interrupted, leaving the page mid-way.
+      data-scroll-behavior="smooth"
       className={`${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper text-ink font-sans">{children}</body>

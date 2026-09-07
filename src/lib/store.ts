@@ -16,6 +16,7 @@ export interface SpotState {
   holdId: string | null;
   pendingUntil: string | null;
   paidAt: string | null;
+  updatedAt: string;
 }
 
 export interface HoldInput {
@@ -30,6 +31,7 @@ export interface HoldInput {
 
 export interface Store {
   list(): Promise<SpotState[]>;
+  get(spotId: string): Promise<SpotState | null>;
   /** Atomically place a hold. Returns false when the spot is not available. */
   hold(input: HoldInput): Promise<boolean>;
   complete(holdId: string): Promise<SpotState | null>;
@@ -84,6 +86,7 @@ function sqliteStore(url: string, authToken: string | undefined): Store {
     holdId: str(r.hold_id),
     pendingUntil: str(r.pending_until),
     paidAt: str(r.paid_at),
+    updatedAt: String(r.updated_at),
   });
   const nowIso = () => new Date().toISOString();
 
@@ -92,6 +95,11 @@ function sqliteStore(url: string, authToken: string | undefined): Store {
       const db = await ensure();
       const { rows } = await db.execute("SELECT * FROM spot_states");
       return rows.map(fromRow);
+    },
+    async get(spotId) {
+      const db = await ensure();
+      const { rows } = await db.execute({ sql: "SELECT * FROM spot_states WHERE spot_id = ?", args: [spotId] });
+      return rows[0] ? fromRow(rows[0]) : null;
     },
     async hold(i) {
       const db = await ensure();

@@ -44,7 +44,7 @@ export function SpotList() {
               </button>
 
               <div className="col-span-2 flex items-center gap-3 sm:col-span-1">
-                <Avatar src={s?.logoDataUrl ?? null} name={s?.sponsorName ?? "–"} size={40} />
+                <Avatar src={s?.logoSrc ?? null} name={s?.sponsorName ?? "–"} size={40} />
                 <div className="min-w-0">
                   <div className="eyebrow">{status === "sold" ? "Held by" : status === "pending" ? "Reserved" : "Held by"}</div>
                   <div className="truncate text-sm font-semibold">

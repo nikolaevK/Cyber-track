@@ -123,7 +123,7 @@ export function Configurator({ debug = false }: { debug?: boolean }) {
         return [
           {
             id,
-            src: s.decal ?? s.logoDataUrl,
+            src: s.decal ?? s.logoSrc,
             name: s.sponsorName ?? "",
             quad: hs.quad,
             clip: hs.poly,
@@ -389,7 +389,7 @@ export function Configurator({ debug = false }: { debug?: boolean }) {
 
                 {state.status === "sold" ? (
                   <div className="mt-5 flex items-center gap-3 rounded-2xl bg-mist p-3">
-                    <Avatar src={state.logoDataUrl} name={state.sponsorName ?? ""} />
+                    <Avatar src={state.logoSrc} name={state.sponsorName ?? ""} />
                     <div className="min-w-0">
                       <div className="eyebrow">Held by</div>
                       <div className="truncate text-sm font-semibold">{state.sponsorName}</div>
