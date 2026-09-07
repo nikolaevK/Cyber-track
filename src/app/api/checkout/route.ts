@@ -131,6 +131,8 @@ export async function POST(req: Request) {
       expires_at: Math.floor(Date.now() / 1000) + (HOLD_MINUTES + 1) * 60,
     });
     if (!session.url) throw new Error("Stripe did not return a checkout URL");
+    // The hold is live: show the panel as pending to everyone else right away.
+    revalidateTag(SPOTS_TAG, { expire: 0 });
     return Response.json({ url: session.url });
   } catch (err) {
     await store.release(holdId);
